@@ -15,8 +15,8 @@
                 <!-- Transaction messages will be dynamically added here -->
             </ul>
             <!-- Display message if no transaction messages available -->
-            <div id="noMessages">
-                <p>No transaction messages available.</p>
+            <div id="noMessages" class="list-item">
+                No transaction messages available.
             </div>
             <script th:inline="javascript">
                 var eventSource = new EventSource("/logMessages");
