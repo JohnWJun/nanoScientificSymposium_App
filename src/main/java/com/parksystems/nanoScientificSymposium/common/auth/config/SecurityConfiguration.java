@@ -44,10 +44,10 @@ public class SecurityConfiguration {
                 .formLogin().disable()
                 .httpBasic().disable()
                 .exceptionHandling()
-                .authenticationEntryPoint(new MemberAuthenticationEntryPoint(jwtTokenizer,authorityUtils))
+//                .authenticationEntryPoint(new MemberAuthenticationEntryPoint(jwtTokenizer,authorityUtils))
                 .and()
-                .apply(new CustomFilterConfigurer())
-                .and()
+//                .apply(new CustomFilterConfigurer())
+//                .and()
                 .authorizeHttpRequests(authorize -> authorize
 //                        .anyRequest().authenticated()
                                 .anyRequest().permitAll()

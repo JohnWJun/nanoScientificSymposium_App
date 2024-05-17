@@ -1,6 +1,9 @@
 package com.parksystems.nanoScientificSymposium.domain.marketo.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.parksystems.nanoScientificSymposium.domain.marketo.auth.Auth;
@@ -42,40 +45,110 @@ public class MarketoService {
     @Value("${marketo.marketoInstance}")
     public String marketoInstance;
 
-
-    public String addToList( long userId, long listId){
+    @Transactional
+    public String addToList( long userId, long listId, long listId2){
         String result = null;
         String token = marketoAuth.getToken();
-        System.out.println(token);
-        try {
-            //Assemble the URL to retrieve data from
-            String endpoint = "https://988-FTP-549.mktorest.com/rest/v1/lists/" + listId + "/leads.json?access_token=" + token + "&id=" + userId;
-            URL url = new URL(endpoint.toString());
-            System.out.println(url);
-            HttpsURLConnection urlConn = (HttpsURLConnection) url.openConnection();
-            urlConn.setRequestMethod("POST");
-            urlConn.setRequestProperty("Content-type", "application/json");//"application/json" content-type is required.
-            urlConn.setRequestProperty("accept", "text/json");
-            urlConn.setDoOutput(true);
-            int responseCode = urlConn.getResponseCode();
-            if (responseCode == 200){
-                InputStream inStream = urlConn.getInputStream();
-                result = convertStreamToString(inStream);
-            }else{
-                result = "Status Code: " + responseCode;
+
+        String endpoint1 = "https://988-FTP-549.mktorest.com/rest/v1/lists/" + listId + "/leads.json?access_token=" + token + "&id=" + userId;
+        String endpoint2 = "https://988-FTP-549.mktorest.com/rest/v1/lists/" + listId2 + "/leads.json?access_token=" + token + "&id=" + userId;
+        boolean isMemberOfTheList = checkIsMember(endpoint2, userId);
+        log.info(String.valueOf(isMemberOfTheList));
+        if(isMemberOfTheList) {
+            try {
+                //Assemble the URL to retrieve data from
+                URL url = new URL(endpoint1.toString());
+                HttpsURLConnection urlConn = (HttpsURLConnection) url.openConnection();
+                urlConn.setRequestMethod("POST");
+                urlConn.setRequestProperty("Content-type", "application/json");//"application/json" content-type is required.
+                urlConn.setRequestProperty("accept", "text/json");
+                urlConn.setDoOutput(true);
+                int responseCode = urlConn.getResponseCode();
+                if (responseCode == 200) {
+                    InputStream inStream = urlConn.getInputStream();
+                    result = convertStreamToString(inStream);
+                    log.info(result);
+                } else {
+                    result = "Status Code: " + responseCode;
+                    log.info(result);
+                }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } else  throw new RuntimeException( "UserID: "+userId+" / Invalid eTicket, please check if you are registered in");
+
         return result;
     }
+    public boolean checkIsMember(String endPoint, long id){
+        boolean isMember = false;
+        String result;
+        try {
+        URL url = new URL(endPoint.toString());
+        HttpsURLConnection urlConn = (HttpsURLConnection) url.openConnection();
+        urlConn.setRequestMethod("GET");
+        urlConn.setRequestProperty("Content-type", "application/json");//"application/json" content-type is required.
+        urlConn.setRequestProperty("accept", "text/json");
+        urlConn.setDoOutput(true);
+        int responseCode = urlConn.getResponseCode();
 
+        if (responseCode == 200){
+            InputStream inStream = urlConn.getInputStream();
+            String responseBody = convertStreamToString(inStream);
+            // Parse JSON response
+            JsonParser parser = new JsonParser();
+            JsonObject jsonResponse = parser.parse(responseBody).getAsJsonObject();
+
+
+            log.info(String.valueOf(jsonResponse));
+            isMember = isIdPresent(jsonResponse.toString(), id);
+
+        }else{
+            result = "Status Code: " + responseCode;
+            isMember = false;
+            throw new RuntimeException("Invalid eTicket, please check if you are registered in");
+        }
+    } catch (MalformedURLException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+            throw new RuntimeException("Invalid eTicket, please check if you are registered in");
+
+        }
+
+
+        return isMember;
+    }
+
+
+    private boolean isIdPresent(String responseJson, long idToCheck) {
+        JsonParser parser = new JsonParser();
+        JsonElement jsonElement = parser.parse(responseJson);
+
+        if (jsonElement.isJsonObject()) {
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            if (jsonObject.has("result")) {
+                JsonArray resultArray = jsonObject.getAsJsonArray("result");
+                for (JsonElement element : resultArray) {
+                    JsonObject item = element.getAsJsonObject();
+                    if (item.has("id")) {
+                        long id = item.get("id").getAsLong();
+                        if (id == idToCheck) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    @Transactional
     public String saveImage(byte[] file, String name,  String description, Boolean insertOnly){
         String result = null;
         String boundary =  "mktoBoundary" + String.valueOf(System.currentTimeMillis());
-        String filePath = "C:\\LeadList\\mktoseedlist.csv";
         String token = marketoAuth.getToken();
         JsonObject folder = new JsonObject();
         folder.addProperty("id", 5368); // Using addProperty instead of add
@@ -204,6 +277,55 @@ public class MarketoService {
 
         return fileOutPut;
     }
+
+    public String findList(long id, String batchSize, String nextPageToken, String[] fields) {
+
+        String token = marketoAuth.getToken();
+        String data = null;
+        try {
+            //Assemble the URL to retrieve data from
+            StringBuilder endpoint = new StringBuilder("https://988-FTP-549.mktorest.com/rest/v1/list/" + id + "/leads.json?access_token=" + token);
+            //append optional params
+            if (batchSize != null){
+                endpoint.append("&batchSize=" + batchSize);
+            }
+            if (nextPageToken != null){
+                endpoint.append("&nextPageToken=" + nextPageToken);
+            }
+            if (fields != null){
+                endpoint.append("&fields=" + csvString(fields));
+            }
+            URL url = new URL(endpoint.toString());
+            HttpsURLConnection urlConn = (HttpsURLConnection) url.openConnection();
+            urlConn.setRequestMethod("GET");
+            urlConn.setRequestProperty("accept", "text/json");
+            int responseCode = urlConn.getResponseCode();
+            if (responseCode == 200) {
+                InputStream inStream = urlConn.getInputStream();
+                data = convertStreamToString(inStream);
+            } else {
+                data = "Status:" + responseCode;
+            }
+        } catch (MalformedURLException e) {
+            System.out.println("URL not valid.");
+        } catch (IOException e) {
+            System.out.println("IOException: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return data;
+    }
+    private String csvString(String[] fields) {
+        StringBuilder fieldCsv = new StringBuilder();
+        for (int i = 0; i < fields.length; i++){
+            fieldCsv.append(fields[i]);
+            if (i + 1 != fields.length){
+                fieldCsv.append(",");
+            }
+        }
+        return fieldCsv.toString();
+    }
+
     private String convertStreamToString(InputStream inputStream) {
         try {
             return new Scanner(inputStream).useDelimiter("\\A").next();
