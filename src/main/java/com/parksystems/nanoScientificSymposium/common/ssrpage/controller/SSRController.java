@@ -30,7 +30,55 @@ public class SSRController {
 
 //        model.addAttribute("logMessages", logMessages);
         // Return the name of the Thymeleaf template to render
-        return "check-in-monitor";
+        return "home";
+    }
+
+    @GetMapping("/home/Americas")
+    public String showSSRPageUS(Model model) {
+
+//        model.addAttribute("logMessages", logMessages);
+        // Return the name of the Thymeleaf template to render
+        return "region-Americas";
+    }
+
+    @GetMapping("/home/Korea")
+    public String showSSRPageKR(Model model) {
+
+//        model.addAttribute("logMessages", logMessages);
+        // Return the name of the Thymeleaf template to render
+        return "region-Korea";
+    }
+
+    @GetMapping("/home/China")
+    public String showSSRPageCN(Model model) {
+
+//        model.addAttribute("logMessages", logMessages);
+        // Return the name of the Thymeleaf template to render
+        return "region-China";
+    }
+
+    @GetMapping("/home/Japan")
+    public String showSSRPageJP(Model model) {
+
+//        model.addAttribute("logMessages", logMessages);
+        // Return the name of the Thymeleaf template to render
+        return "region-Japan";
+    }
+
+    @GetMapping("/home/Europe")
+    public String showSSRPageEU(Model model) {
+
+//        model.addAttribute("logMessages", logMessages);
+        // Return the name of the Thymeleaf template to render
+        return "region-Europe";
+    }
+
+    @GetMapping("/home/SEAsia")
+    public String showSSRPageSE(Model model) {
+
+//        model.addAttribute("logMessages", logMessages);
+        // Return the name of the Thymeleaf template to render
+        return "region-SE Asia";
     }
 //    @GetMapping("/logMessages")
 //    public ResponseEntity
