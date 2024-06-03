@@ -6,7 +6,7 @@
 <th:block layout:fragment="content">
     <div class="row main-head ">
         <div class="col-12 main-title " style="padding-top:20px; padding-bottom:20px;">
-            # Korea Event Check-In Status
+            # Europe Event Check-In Status
         </div>
     </div>
     <div class="row ">
@@ -31,6 +31,7 @@
                     var messageDiv = document.createElement("div");
                     var statusDiv = document.createElement("div");
 
+                    if(message.region == "Europe"){
                     if (message.error == null) {
                         listItem.className = "list-item";
                         messageDiv.innerText = "User with ID " + message.userId + " checked in the NSS Event";
@@ -53,6 +54,7 @@
                     // Optionally, hide the "noMessages" element if it's displayed when there are no messages
                     if (noMessages) {
                         noMessages.style.display = 'none';
+                    }
                     }
                 };
             </script>

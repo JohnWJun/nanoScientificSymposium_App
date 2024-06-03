@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{/layouts/layout}">
+
+<th:block layout:fragment="content">
+    <div class="row main-head">
+        <div class="col-12 main-title" style="padding-top:20px; padding-bottom:20px;">
+            # Settings
+        </div>
+    </div>
+    <div class="row">
+        <div class="table-responsive portlet" style="padding: 50px; min-height: 300px; max-height: 500px; overflow-y: auto; display: flex; flex-direction:column; align-items: center; justify-content: center;">
+            <div style="margin-bottom: 40px; width:100%; justify-content: start;">
+                <h5>Submit the proper region name and Marekto list IDs to change the basic setting.</h5>
+            </div>
+            <div>
+                <label for="region">Region: </label>
+                <select id="region" name="region" value="" required style="margin-right:20px">
+                    <option value="">Select a region</option>
+                    <option value="US">US</option>
+                    <option value="KR">KR</option>
+                    <option value="SE Asia">SE Asia</option>
+                    <option value="EU">EU</option>
+                    <option value="JP">JP</option>
+                </select>
+
+                <label for="newRegistrantListId">New Registrant List ID: </label>
+                <input type="text" id="newRegistrantListId" name="newRegistrantListId" value="" required style="margin-right:20px"/>
+
+                <label for="newCheckInListId">New Check-In List ID: </label>
+                <input type="text" id="newCheckInListId" name="newCheckInListId" value="" required style="margin-right:20px"/>
+                <button id="submitBtn" style="border:none; color: white; padding:5px; border-radius:5px; background-color: #37ade0;">Submit</button>
+            </div>
+
+
+            <script>
+                document.getElementById('submitBtn').addEventListener('click', function(event) {
+                    event.preventDefault(); // Prevent the default form submission
+
+                    var region = document.getElementById('region').value;
+                    var newRegistrantListId = document.getElementById('newRegistrantListId').value;
+                    var newCheckInListId = document.getElementById('newCheckInListId').value;
+
+                    var url = '/marketo/lists/' + encodeURIComponent(region) + '/' + encodeURIComponent(newRegistrantListId) + '/' + encodeURIComponent(newCheckInListId);
+                    var method = 'PATCH'; // or 'PATCH' if you're updating data
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open(method, url, true);
+                    xhr.setRequestHeader('Content-Type', 'application/json'); // Set the appropriate content type
+
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState === XMLHttpRequest.DONE) {
+                            if (xhr.status === 200) {
+                                // Request successful, handle response here
+                                console.log(xhr.responseText);
+                                alert('Request successful!');
+
+                            } else {
+                                // Request failed, handle error here
+                                console.error('Request failed with status:', xhr.status);
+                                alert('Request failed with status:', xhr.status);
+                            }
+                        }
+                    };
+
+                    // Send the request
+                    xhr.send();
+                });
+            </script>
+        </div>
+    </div>
+</th:block>
+</html>

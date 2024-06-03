@@ -9,7 +9,8 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 public class LogMessage {
-    long userId;
+     String region;
+     long userId;
      long listId;
      String status;
      String error;

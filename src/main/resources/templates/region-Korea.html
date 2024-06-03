@@ -31,6 +31,7 @@
                     var messageDiv = document.createElement("div");
                     var statusDiv = document.createElement("div");
 
+                    if(message.region == "Korea"){
                     if (message.error == null) {
                         listItem.className = "list-item";
                         messageDiv.innerText = "User with ID " + message.userId + " checked in the NSS Event";
@@ -53,6 +54,7 @@
                     // Optionally, hide the "noMessages" element if it's displayed when there are no messages
                     if (noMessages) {
                         noMessages.style.display = 'none';
+                    }
                     }
                 };
             </script>

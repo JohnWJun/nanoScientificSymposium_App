@@ -44,14 +44,32 @@ public class MarketoService {
     private final Auth marketoAuth;
     @Value("${marketo.marketoInstance}")
     public String marketoInstance;
+    static long USREListId= 2016;
+    static long USCKListId= 2017;
 
+    static long KRREListId= 2016;
+    static long KRCKListId= 2017;
+
+    public void changeListId( String region, long newREId, long newCKId){
+        if (region.equals("US")){
+            USREListId = newREId;
+            USCKListId = newCKId;
+        }
+    }
     @Transactional
-    public String addToList( long userId, long listId, long listId2){
+    public String addToList( String region, long userId){
         String result = null;
         String token = marketoAuth.getToken();
+        long ckListId = 0L;
+        long reListID = 0L;
+        if (region.equals("US")) {
+            ckListId = USCKListId;
+            reListID = USREListId;
+        } else if (region.equals("KR")) {
 
-        String endpoint1 = "https://988-FTP-549.mktorest.com/rest/v1/lists/" + listId + "/leads.json?access_token=" + token + "&id=" + userId;
-        String endpoint2 = "https://988-FTP-549.mktorest.com/rest/v1/lists/" + listId2 + "/leads.json?access_token=" + token + "&id=" + userId;
+        }
+        String endpoint1 = "https://988-FTP-549.mktorest.com/rest/v1/lists/" + ckListId + "/leads.json?access_token=" + token + "&id=" + userId;
+        String endpoint2 = "https://988-FTP-549.mktorest.com/rest/v1/lists/" + reListID + "/leads.json?access_token=" + token + "&id=" + userId;
         boolean isMemberOfTheList = checkIsMember(endpoint2, userId);
         log.info(String.valueOf(isMemberOfTheList));
         if(isMemberOfTheList) {
@@ -278,8 +296,14 @@ public class MarketoService {
         return fileOutPut;
     }
 
-    public String findList(long id, String batchSize, String nextPageToken, String[] fields) {
+    public String findList(String region, String type, String batchSize, String nextPageToken, String[] fields) {
 
+        long id = 0L;
+        if (region.equals("US") && type.equals("REGI")){
+            id = USREListId;
+        } else if (region.equals("US") && type.equals("CHECK")){
+            id = USCKListId;
+        }
         String token = marketoAuth.getToken();
         String data = null;
         try {

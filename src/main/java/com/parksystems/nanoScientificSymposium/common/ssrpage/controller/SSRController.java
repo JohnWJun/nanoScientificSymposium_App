@@ -2,6 +2,7 @@ package com.parksystems.nanoScientificSymposium.common.ssrpage.controller;
 
 
 
+
 import com.parksystems.nanoScientificSymposium.common.ssrpage.logMessage.LogMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +23,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SSRController {
 
-    private final ApplicationContext applicationContext;
 
+    @GetMapping("/home/settings")
+    public String showSSRPageSettings(Model model) {
+        model.addAttribute("region", "");
+        model.addAttribute("newRegistrantListId", 0L);
+        model.addAttribute("newCheckInListId", 0L);
+        return "settings";
+    }
 
     @GetMapping("/home")
     public String showSSRPage(Model model) {
