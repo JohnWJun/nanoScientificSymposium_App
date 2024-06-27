@@ -12,15 +12,15 @@
     <div class="row">
         <div class="table-responsive portlet" style="padding: 50px; min-height: 300px; max-height: 500px; overflow-y: auto; display: flex; flex-direction:column; align-items: center; justify-content: center;">
             <div style="margin-bottom: 40px; width:100%; justify-content: start;">
-                <h5>Submit the proper region name and Marekto list IDs to change the basic setting.</h5>
+                <p>*Submit the proper region name and Marekto list IDs to change the basic setting.</p>
             </div>
-            <div>
+            <div style="width:100%; justify-content: start;">
                 <label for="region">Region: </label>
                 <select id="region" name="region" value="" required style="margin-right:20px">
                     <option value="">Select a region</option>
                     <option value="US">US</option>
                     <option value="KR">KR</option>
-                    <option value="SE Asia">SE Asia</option>
+                    <option value="SE-Asia">SE Asia</option>
                     <option value="EU">EU</option>
                     <option value="JP">JP</option>
                 </select>
@@ -33,40 +33,80 @@
                 <button id="submitBtn" style="border:none; color: white; padding:5px; border-radius:5px; background-color: #37ade0;">Submit</button>
             </div>
 
+            <!-- Modal -->
+            <div id="passcodeModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <p>Please enter the passcode:</p>
+                    <input type="password" id="passcode" />
+                    <button id="verifyPasscodeBtn" style="border:none; color: white; margin-top:5px; padding:5px; border-radius:5px; background-color: #37ade0;">Verify</button>
+                    <p class="error" id="errorMessage">Incorrect passcode. Please try again.</p>
+                </div>
+            </div>
 
             <script>
-                document.getElementById('submitBtn').addEventListener('click', function(event) {
-                    event.preventDefault(); // Prevent the default form submission
+                // JavaScript for modal
+                var modal = document.getElementById("passcodeModal");
+                var submitBtn = document.getElementById("submitBtn");
+                var verifyPasscodeBtn = document.getElementById("verifyPasscodeBtn");
+                var errorMessage = document.getElementById("errorMessage");
+                var closeModal = document.getElementsByClassName("close")[0];
 
+                submitBtn.onclick = function(event) {
+                    event.preventDefault();
+                    modal.style.display = "block";
+                }
+
+                closeModal.onclick = function() {
+                    modal.style.display = "none";
+                    errorMessage.style.display = "none";
+                }
+
+                window.onclick = function(event) {
+                    if (event.target == modal) {
+                        modal.style.display = "none";
+                        errorMessage.style.display = "none";
+                    }
+                }
+
+                verifyPasscodeBtn.onclick = function() {
+                    var passcode = document.getElementById("passcode").value;
+                    var correctPasscode = "1234"; // Replace with your desired passcode
+
+                    if (passcode === correctPasscode) {
+                        modal.style.display = "none";
+                        sendAPIRequest();
+                    } else {
+                        errorMessage.style.display = "block";
+                    }
+                }
+
+                function sendAPIRequest() {
                     var region = document.getElementById('region').value;
                     var newRegistrantListId = document.getElementById('newRegistrantListId').value;
                     var newCheckInListId = document.getElementById('newCheckInListId').value;
 
                     var url = '/marketo/lists/' + encodeURIComponent(region) + '/' + encodeURIComponent(newRegistrantListId) + '/' + encodeURIComponent(newCheckInListId);
-                    var method = 'PATCH'; // or 'PATCH' if you're updating data
+                    var method = 'PATCH';
 
                     var xhr = new XMLHttpRequest();
                     xhr.open(method, url, true);
-                    xhr.setRequestHeader('Content-Type', 'application/json'); // Set the appropriate content type
+                    xhr.setRequestHeader('Content-Type', 'application/json');
 
                     xhr.onreadystatechange = function () {
                         if (xhr.readyState === XMLHttpRequest.DONE) {
                             if (xhr.status === 200) {
-                                // Request successful, handle response here
                                 console.log(xhr.responseText);
                                 alert('Request successful!');
-
                             } else {
-                                // Request failed, handle error here
                                 console.error('Request failed with status:', xhr.status);
                                 alert('Request failed with status:', xhr.status);
                             }
                         }
                     };
 
-                    // Send the request
                     xhr.send();
-                });
+                }
             </script>
         </div>
     </div>

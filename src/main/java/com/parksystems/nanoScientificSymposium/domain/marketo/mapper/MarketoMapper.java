@@ -48,11 +48,17 @@ public interface MarketoMapper {
             lead.setFirstName(leadObject.has("firstName") && !leadObject.get("firstName").isJsonNull() ? leadObject.get("firstName").getAsString() : null);
             lead.setLastName(leadObject.has("lastName") && !leadObject.get("lastName").isJsonNull() ? leadObject.get("lastName").getAsString() : null);
             lead.setEmail(leadObject.has("email") && !leadObject.get("email").isJsonNull() ? leadObject.get("email").getAsString() : null);
+            lead.setSalutation(leadObject.has("salutation") && !leadObject.get("salutation").isJsonNull() ? leadObject.get("salutation").getAsString() : null);
+            lead.setCompany(leadObject.has("company") && !leadObject.get("company").isJsonNull() ? leadObject.get("company").getAsString() : null);
+            lead.setDepartment(leadObject.has("department") && !leadObject.get("department").isJsonNull() ? leadObject.get("department").getAsString() : null);
+            lead.setPhone(leadObject.has("phone") && !leadObject.get("phone").isJsonNull() ? leadObject.get("phone").getAsString() : null);
+            lead.setResearchTopic(leadObject.has("psResearchTopic") && !leadObject.get("psResearchTopic").isJsonNull() ? leadObject.get("psResearchTopic").getAsString() : null);
             resultList.add(lead);
         }
 
         MarketoDto.MarketoListResponse response = new MarketoDto.MarketoListResponse();
         response.setResult(resultList);
+        response.setNumber(resultList.size());
         response.setRequestId(jsonResult.getAsJsonPrimitive("requestId").getAsString());
         return response;
     }

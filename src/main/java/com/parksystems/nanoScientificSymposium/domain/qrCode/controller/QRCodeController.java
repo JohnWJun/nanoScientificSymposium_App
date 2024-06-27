@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/qr-code")
@@ -32,11 +33,14 @@ public class QRCodeController {
                                          @RequestParam("width") int width,
                                          @RequestParam("height") int height) throws IOException, WriterException {
 
+        String fileName = UUID.randomUUID().toString();
         System.out.println(id);
         byte[] qrCode = QRCodeGenerator.generateQRCodeImage(id, width, height);
 
-        String savedURL = marketoService.saveImage(qrCode,id+"eTicket.png","qr code image", true);
+        String savedURL = marketoService.saveImage(qrCode,fileName+id+"eTicket.png","qr code image", true, "image/png", 5368);
         QRCodeDto.QRResponse response = qrCodeMapper.ToResponse(savedURL);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+
 }

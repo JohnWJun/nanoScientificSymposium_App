@@ -21,6 +21,7 @@
             <script th:inline="javascript">
                 var eventSource = new EventSource("/logMessages");
 
+
                 eventSource.onmessage = function(event) {
                     var message = JSON.parse(event.data);
                     var messageList = document.getElementById("messageList");
@@ -31,7 +32,24 @@
                     var messageDiv = document.createElement("div");
                     var statusDiv = document.createElement("div");
 
-                    if(message.region == "Japan"){
+                    if(message.region == "JP"){
+                     // Function to fetch and display the list data
+                        function fetchAndDisplayList() {
+                            fetch('/marketo/lists/JP/CHECK')
+                                .then(response => response.json())
+                                .then(data => {
+                                    var checkInList = document.getElementById("CheckInList");
+                                    checkInList.innerHTML = ''; // Clear existing list items
+                                    data.result.forEach(item => {
+                                        var listItem = document.createElement("li");
+                                        listItem.className = "list-item";
+                                        listItem.innerText = "ID: " + item.id + ", Name: " + item.firstName + " " + item.lastName + ", Email: " + item.email;
+                                        checkInList.appendChild(listItem);
+                                    });
+                                })
+                                .catch(error => console.error('Error fetching list:', error));
+                        }
+                    fetchAndDisplayList();
                     if (message.error == null) {
                         listItem.className = "list-item";
                         messageDiv.innerText = "User with ID " + message.userId + " checked in the NSS Event";
@@ -43,6 +61,7 @@
                         statusDiv.innerText =  message.status; // Assuming status is still present in error messages
                         statusDiv.className = "list-item-error";
                     }
+
 
                     // Append the message and status to the list item
                     listItem.appendChild(messageDiv);
@@ -62,21 +81,63 @@
 
         </div>
     </div>
-        <div class="row ">
-            <div class="row main-head ">
-                <div class="col-12 main-title " style="padding-top:20px; padding-bottom:20px;">
-                    # Registrants
-                </div>
+    <div class="row ">
+        <div class="row main-head ">
+            <div class="col-12 main-title " style="padding-top:20px; padding-bottom:20px;">
+                # Check-In
             </div>
-            <div class="table-responsive portlet" style="min-height: 300px; max-height: 500px; overflow-y: auto;">
+        </div>
+        <div class="table-responsive portlet" style="min-height: 300px; max-height: 500px; overflow-y: auto;">
+            <p>Count: <span id="checkInCount"></span></p>
+            <ul id="CheckInList" style="padding-top:20px; padding-bottom:20px;">
+                <!-- Transaction messages will be dynamically added here -->
+            </ul>
+            <script th:inline="javascript">
+                // Function to fetch and display the list data
+                function fetchAndDisplayList() {
+                     fetch('/marketo/lists/JP/CHECK')
+                        .then(response => response.json())
+                        .then(data => {
+                            var checkInList = document.getElementById("CheckInList");
+                            checkInList.innerHTML = ''; // Clear existing list items
+                            data.result.forEach(item => {
+                                var listItem = document.createElement("li");
+                                listItem.className = "list-item";
+                                listItem.innerText = "ID: " + item.id + ", Name: " + item.firstName + " " + item.lastName + ", Email: " + item.email;
+                                checkInList.appendChild(listItem);
+                            });
+                            var number = document.getElementById("checkInCount");
+                             if (number) {
+                                number.innerText = data.number;
+                            }
+                        })
+                        .catch(error => console.error('Error fetching list:', error));
+                }
 
+                // Call the function initially to fetch and display the list data
+                fetchAndDisplayList();
+
+                // Set up an interval to refresh the list every 30 seconds (adjust as needed)
+<!--                setInterval(fetchAndDisplayList, 30000);-->
+            </script>
+
+        </div>
+    </div>
+    <div class="row ">
+        <div class="row main-head ">
+            <div class="col-12 main-title " style="padding-top:20px; padding-bottom:20px;">
+                # Registrants
+            </div>
+        </div>
+        <div class="table-responsive portlet" style="min-height: 300px; max-height: 500px; overflow-y: auto;">
+            <p>Count: <span id="registrantCount"></span></p>
             <ul id="RegistrantList" style="padding-top:20px; padding-bottom:20px;">
                 <!-- Transaction messages will be dynamically added here -->
             </ul>
             <script th:inline="javascript">
                 // Function to fetch and display the list data
                 function fetchAndDisplayList() {
-                    fetch('/marketo/lists/2005')
+                     fetch('/marketo/lists/JP/REGI')
                         .then(response => response.json())
                         .then(data => {
                             var registrantList = document.getElementById("RegistrantList");
@@ -87,6 +148,10 @@
                                 listItem.innerText = "ID: " + item.id + ", Name: " + item.firstName + " " + item.lastName + ", Email: " + item.email;
                                 registrantList.appendChild(listItem);
                             });
+                             var number = document.getElementById("registrantCount");
+                             if (number) {
+                                number.innerText = data.number;
+                            }
                         })
                         .catch(error => console.error('Error fetching list:', error));
                 }

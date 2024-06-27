@@ -1,10 +1,14 @@
 package com.parksystems.nanoScientificSymposium.domain.marketo.controller;
 
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.parksystems.nanoScientificSymposium.common.ssrpage.logMessage.LogMessage;
 import com.parksystems.nanoScientificSymposium.domain.marketo.dto.MarketoDto;
 import com.parksystems.nanoScientificSymposium.domain.marketo.mapper.MarketoMapper;
 import com.parksystems.nanoScientificSymposium.domain.marketo.service.MarketoService;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,6 +18,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
 
 
 @RestController
@@ -43,13 +51,12 @@ public class MarketoController {
             // Log successful check-in
             log.info("User with ID {} checked into list {} successfully.", userId, listId);
 
-
-            publisher.publishEvent(new LogMessage("Americas",userId, listId, "success", null));
+            publisher.publishEvent(new LogMessage(region,userId, listId, "success", null));
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             // Log error if an exception occurs
             log.error("Error occurred while processing check-in request for user ID {}: {}", id, e.getMessage(), e);
-            publisher.publishEvent(new LogMessage("Americas",userId, listId, "error", e.getMessage()));
+            publisher.publishEvent(new LogMessage(region, userId, listId, "error", e.getMessage()));
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -71,6 +78,31 @@ public class MarketoController {
         service.changeListId(region,REid,CKid);
 
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @Transactional
+    @PostMapping("/save-img")
+    public ResponseEntity submitFile (@RequestPart("img") MultipartFile file,
+                                      @RequestPart("tiffImg") MultipartFile tiffFile,
+                                      @RequestPart("info") MarketoDto.MarketoImgForm info) throws IOException {
+
+            byte[] fileBytes = service.extractBinary(file);
+            byte[] tiffFileBytes = service.extractBinary(tiffFile);
+            String result1 = service.saveImage(fileBytes, info.getImgCT_title()+"_"+info.getImgCT_author()+ LocalDateTime.now(), "image-contest Image",true, "image/png", 5539);
+            String result2 = service.saveImage(tiffFileBytes, info.getImgCT_title()+"_"+info.getImgCT_author()+ LocalDateTime.now(), "image-contest Image, TIFF",true, "image/tiff", 5540);
+            String formFillResult = service.fillOutForm(info, result1, result2);
+
+
+        return new ResponseEntity<>( "Form submission success",HttpStatus.OK);
+    }
+
+    @GetMapping("/lead/{lead-id}")
+    public ResponseEntity getPerson(@PathVariable("lead-id") long id){
+
+        String person = service.findPerson(id);
+        MarketoDto.MarketoListResponse response = mapper.listToResponse(person);
+
+        return new ResponseEntity<>(response,HttpStatus.OK);
     }
 }
 

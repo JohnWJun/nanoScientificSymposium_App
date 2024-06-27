@@ -32,7 +32,7 @@
                     var messageDiv = document.createElement("div");
                     var statusDiv = document.createElement("div");
 
-                    if(message.region == "Americas"){
+                    if(message.region == "US"){
                      // Function to fetch and display the list data
                         function fetchAndDisplayList() {
                             fetch('/marketo/lists/US/CHECK')
@@ -88,7 +88,7 @@
                 </div>
             </div>
             <div class="table-responsive portlet" style="min-height: 300px; max-height: 500px; overflow-y: auto;">
-
+                <p>Count: <span id="checkInCount"></span></p>
             <ul id="CheckInList" style="padding-top:20px; padding-bottom:20px;">
                 <!-- Transaction messages will be dynamically added here -->
             </ul>
@@ -98,14 +98,21 @@
                      fetch('/marketo/lists/US/CHECK')
                         .then(response => response.json())
                         .then(data => {
+
                             var checkInList = document.getElementById("CheckInList");
                             checkInList.innerHTML = ''; // Clear existing list items
                             data.result.forEach(item => {
                                 var listItem = document.createElement("li");
                                 listItem.className = "list-item";
                                 listItem.innerText = "ID: " + item.id + ", Name: " + item.firstName + " " + item.lastName + ", Email: " + item.email;
+
                                 checkInList.appendChild(listItem);
                             });
+                             var number = document.getElementById("checkInCount");
+                             if (number) {
+                                number.innerText = data.number;
+                            }
+
                         })
                         .catch(error => console.error('Error fetching list:', error));
                 }
@@ -126,7 +133,7 @@
             </div>
         </div>
         <div class="table-responsive portlet" style="min-height: 300px; max-height: 500px; overflow-y: auto;">
-
+            <p>Count: <span id="registrantCount"></span></p>
             <ul id="RegistrantList" style="padding-top:20px; padding-bottom:20px;">
                 <!-- Transaction messages will be dynamically added here -->
             </ul>
@@ -144,6 +151,10 @@
                                 listItem.innerText = "ID: " + item.id + ", Name: " + item.firstName + " " + item.lastName + ", Email: " + item.email;
                                 registrantList.appendChild(listItem);
                             });
+                            var number = document.getElementById("registrantCount");
+                             if (number) {
+                                number.innerText = data.number;
+                            }
                         })
                         .catch(error => console.error('Error fetching list:', error));
                 }

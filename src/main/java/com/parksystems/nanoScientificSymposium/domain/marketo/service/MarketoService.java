@@ -7,16 +7,17 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.parksystems.nanoScientificSymposium.domain.marketo.auth.Auth;
+import com.parksystems.nanoScientificSymposium.domain.marketo.dto.MarketoDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.net.ssl.HttpsURLConnection;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -24,15 +25,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Reader;
-
 
 
 @Slf4j
@@ -47,26 +39,141 @@ public class MarketoService {
     static long USREListId= 2016;
     static long USCKListId= 2017;
 
-    static long KRREListId= 2016;
-    static long KRCKListId= 2017;
+    static long KRREListId= 2002;
+    static long KRCKListId= 2045;
+
+    static long EUREListId= 1960;
+    static long EUCKListId= 2042;
+
+    static long SEAREListId= 2004;
+    static long SEACKListId= 2044;
+
+    static long JPREListId= 2005;
+    static long JPCKListId= 2043;
+
 
     public void changeListId( String region, long newREId, long newCKId){
         if (region.equals("US")){
             USREListId = newREId;
             USCKListId = newCKId;
+        } else if (region.equals("KR")){
+            KRREListId = newREId;
+            KRCKListId = newCKId;
+        } else if (region.equals("EU")){
+            EUREListId = newREId;
+            EUCKListId = newCKId;
+        } else if (region.equals("SE-Asia")){
+            SEAREListId = newREId;
+            SEACKListId = newCKId;
+        } else if (region.equals("JP")){
+            JPREListId = newREId;
+            JPCKListId = newCKId;
+        } else {
+            throw new RuntimeException("please submit the proper region name");
         }
+
+
     }
+
+    @Transactional
+    public String fillOutForm(MarketoDto.MarketoImgForm info, String PNG, String TIFF) {
+        String result = null;
+        String token = marketoAuth.getToken();
+        long formId = 3054L;
+        String endpoint = "https://988-FTP-549.mktorest.com/rest/v1/leads/submitForm.json?access_token=" + token;
+        String jsonData = "{\n" +
+                "  \"formId\": " + formId + ",\n" +
+                "  \"input\": [\n" +
+                "    {\n" +
+                "      \"leadFormFields\": {\n" +
+                "        \"imgCTtitle\": \"" + info.getImgCT_title() + "\",\n" +
+                "        \"imgCTsample\": \"" + info.getImgCT_sample() + "\",\n" +
+                "        \"imgCTdesc\": \"" + info.getImgCT_desc() + "\",\n" +
+                "        \"imgCTauthor\": \"" + info.getImgCT_author() + "\",\n" +
+                "        \"imgCTorganization\": \"" + info.getImgCT_organization() + "\",\n" +
+                "        \"email\": \"" + info.getImgCT_email() + "\",\n" +
+                "        \"imgCTusedsystem\": \"" + info.getImgCT_system() + "\",\n" +
+                "        \"imgCTmode\": \"" + info.getImgCT_mode() + "\",\n" +
+                "        \"imgCTapplication\": \"" + info.getImgCT_application() + "\",\n" +
+                "        \"imgCTprobe\": \"" + info.getImgCT_probe() + "\",\n" +
+                "        \"imgCTscanSize\": \"" + info.getImgCT_scanSize() + "\",\n" +
+                "        \"imgCTscanUnit\": \"" + info.getImgCT_scanUnit() + "\",\n" +
+                "        \"imgCTscanPoints\": \"" + info.getImgCT_scanPoints() + "\",\n" +
+                "        \"imgCTscanLines\": \"" + info.getImgCT_scanLines() + "\",\n" +
+                "        \"imgCTcitation\": \"" + info.getImgCT_citation() + "\",\n" +
+                "        \"imgCTpublicationLink\": \"" + info.getImgCT_publicationLink() + "\",\n" +
+                "        \"psmktOptin\": " + info.isPsmktOptin() + ",\n" +
+                "        \"reference_permission__c\": " + info.isReference_permission__c() + ",\n" +
+                "        \"psOptin\": " + info.isPsOptin() + ",\n" +
+                "        \"imgCTPNGurl\": \"" + PNG + "\",\n" +
+                "        \"imgCTTIFFurl\": \"" + TIFF + "\"\n" +
+                "      }\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}";
+
+
+        try {
+            //Assemble the URL to retrieve data from
+            URL url = new URL(endpoint.toString());
+            HttpsURLConnection urlConn = (HttpsURLConnection) url.openConnection();
+            urlConn.setRequestMethod("POST");
+            urlConn.setRequestProperty("Content-type", "application/json");//"application/json" content-type is required.
+            urlConn.setRequestProperty("accept", "text/json");
+
+            urlConn.setDoOutput(true);
+
+            // Write the JSON data to the output stream
+            try (OutputStream os = urlConn.getOutputStream()) {
+                byte[] input = jsonData.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+            int responseCode = urlConn.getResponseCode();
+            if (responseCode == 200) {
+                InputStream inStream = urlConn.getInputStream();
+                result = convertStreamToString(inStream);
+                log.info(result);
+            } else {
+                result = "Status Code: " + responseCode;
+                throw new RuntimeException("error: " + result);
+
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("error: " + e);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("error: " + e);
+        }
+
+        return result;
+
+    }
+
     @Transactional
     public String addToList( String region, long userId){
         String result = null;
         String token = marketoAuth.getToken();
         long ckListId = 0L;
         long reListID = 0L;
-        if (region.equals("US")) {
+
+        if (region.equals("US")){
             ckListId = USCKListId;
             reListID = USREListId;
-        } else if (region.equals("KR")) {
-
+        } else if (region.equals("KR")){
+            ckListId = KRCKListId;
+            reListID = KRREListId;
+        } else if (region.equals("EU")){
+            ckListId = EUCKListId;
+            reListID = EUREListId;
+        } else if (region.equals("SE-Asia")){
+            ckListId = SEACKListId;
+            reListID = SEAREListId;
+        } else if (region.equals("JP")){
+            ckListId = JPCKListId;
+            reListID = JPREListId;
+        } else {
+            throw new RuntimeException("please submit the proper region name");
         }
         String endpoint1 = "https://988-FTP-549.mktorest.com/rest/v1/lists/" + ckListId + "/leads.json?access_token=" + token + "&id=" + userId;
         String endpoint2 = "https://988-FTP-549.mktorest.com/rest/v1/lists/" + reListID + "/leads.json?access_token=" + token + "&id=" + userId;
@@ -89,11 +196,14 @@ public class MarketoService {
                 } else {
                     result = "Status Code: " + responseCode;
                     log.info(result);
+                    throw new RuntimeException("error: " + result);
                 }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
+                throw new RuntimeException("error: " + e);
             } catch (IOException e) {
                 e.printStackTrace();
+                throw new RuntimeException("error: " + e);
             }
         } else  throw new RuntimeException( "UserID: "+userId+" / Invalid eTicket, please check if you are registered in");
 
@@ -130,7 +240,8 @@ public class MarketoService {
     } catch (MalformedURLException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
-    } catch (IOException e) {
+            throw new RuntimeException("error: "+ e);
+        } catch (IOException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
             throw new RuntimeException("Invalid eTicket, please check if you are registered in");
@@ -156,7 +267,8 @@ public class MarketoService {
                         long id = item.get("id").getAsLong();
                         if (id == idToCheck) {
                             return true;
-                        }
+                        } else throw new RuntimeException("No person in the list");
+
                     }
                 }
             }
@@ -164,12 +276,12 @@ public class MarketoService {
         return false;
     }
     @Transactional
-    public String saveImage(byte[] file, String name,  String description, Boolean insertOnly){
+    public String saveImage(byte[] file, String name,  String description, Boolean insertOnly, String format, long folderId){
         String result = null;
         String boundary =  "mktoBoundary" + String.valueOf(System.currentTimeMillis());
         String token = marketoAuth.getToken();
         JsonObject folder = new JsonObject();
-        folder.addProperty("id", 5368); // Using addProperty instead of add
+        folder.addProperty("id", folderId); // Using addProperty instead of add
         folder.addProperty("type", "Folder");
         try {
             //Create the endpoint and then append all optional and required parameters
@@ -183,7 +295,7 @@ public class MarketoService {
             PrintWriter wr = new PrintWriter(new OutputStreamWriter(urlConn.getOutputStream()));
             String base64EncodedFile = Base64.getEncoder().encodeToString(file);
             //Format and append the multipart data to the writer
-            addMultipart(boundary, file, wr, "file", name, "image/png", urlConn );
+            addMultipart(boundary, file, wr, "file", name, format, urlConn );
             addMultipart(boundary, name, wr, "name");
             addMultipart(boundary, folder.toString(), wr, "folder");
             if (description != null){
@@ -216,6 +328,7 @@ public class MarketoService {
                         // Get the first element of the array
                         JsonObject resultObject = resultArray.get(0).getAsJsonObject();
 
+
                         // Check if the "url" field exists
                         if (resultObject.has("url")) {
                             // Get the URL value
@@ -232,15 +345,32 @@ public class MarketoService {
                 }
             }else{
                 result = "Status Code: " + responseCode;
+               throw new RuntimeException("error: " + result);
             }
         } catch (MalformedURLException e) {
             e.printStackTrace();
+            throw new RuntimeException("error: " + e);
         } catch (IOException e) {
             e.printStackTrace();
+            throw new RuntimeException("error: " + e);
         }
 
         return result;
 
+    }
+
+    public byte[] extractBinary(MultipartFile file){
+        try {
+            // Convert MultipartFile to byte[]
+            byte[] fileBytes = file.getBytes();
+
+            // You can now process the byte array as needed
+            // For demonstration, let's just return a simple message
+            return fileBytes;
+        } catch (Exception e) {
+            // Handle the exception (e.g., file conversion failed)
+            throw new RuntimeException("please check the file", e);
+        }
     }
     private void addMultipart(String boundary, byte[] requestBody, PrintWriter wr, String paramName, String name, String contentType, HttpsURLConnection urlConn) {
 
@@ -258,6 +388,7 @@ public class MarketoService {
             wr.flush();
         } catch (Exception e) {
             e.printStackTrace();
+            throw new RuntimeException("error: " + e);
         }
 
     }
@@ -289,8 +420,10 @@ public class MarketoService {
             br.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            throw new RuntimeException("error: " + e);
         } catch(IOException e){
             e.printStackTrace();
+            throw new RuntimeException("error: " + e);
         }
 
         return fileOutPut;
@@ -304,6 +437,30 @@ public class MarketoService {
         } else if (region.equals("US") && type.equals("CHECK")){
             id = USCKListId;
         }
+
+        if (region.equals("KR") && type.equals("REGI")){
+            id = KRREListId;
+        } else if (region.equals("KR") && type.equals("CHECK")){
+            id = KRCKListId;
+        }
+
+        if (region.equals("EU") && type.equals("REGI")){
+            id = EUREListId;
+        } else if (region.equals("EU") && type.equals("CHECK")){
+            id = EUCKListId;
+        }
+
+        if (region.equals("SE-Asia") && type.equals("REGI")){
+            id = SEAREListId;
+        } else if (region.equals("SE-Asia") && type.equals("CHECK")){
+            id = SEACKListId;
+        }
+        if (region.equals("JP") && type.equals("REGI")){
+            id = JPREListId;
+        } else if (region.equals("JP") && type.equals("CHECK")){
+            id = JPCKListId;
+        }
+
         String token = marketoAuth.getToken();
         String data = null;
         try {
@@ -332,9 +489,47 @@ public class MarketoService {
             }
         } catch (MalformedURLException e) {
             System.out.println("URL not valid.");
+            throw new RuntimeException("error: " + e);
         } catch (IOException e) {
             System.out.println("IOException: " + e.getMessage());
             e.printStackTrace();
+            throw new RuntimeException("error: " + e);
+        }
+
+        return data;
+    }
+
+    public String findPerson(long id) {
+        String token = marketoAuth.getToken();
+        String data = null;
+        try {
+            //Assemble the URL to retrieve data from
+            StringBuilder endpoint = new StringBuilder("https://988-FTP-549.mktorest.com/rest/v1/lead/" + id + ".json?access_token=" + token+ "&fields=Salutation,FirstName,LastName,Company,Department,Email,Phone,psResearchTopic");
+            //append the fields parameter if included
+//            if (fields != null){
+//                endpoint.append("&fields=" + csvString(fields));
+//            }
+            URL url = new URL(endpoint.toString());
+            HttpsURLConnection urlConn = (HttpsURLConnection) url.openConnection();
+            urlConn.setRequestMethod("GET");
+            urlConn.setDoOutput(true);
+            urlConn.setRequestProperty("accept", "text/json");
+            int responseCode = urlConn.getResponseCode();
+            if (responseCode == 200) {
+                InputStream inStream = urlConn.getInputStream();
+                data = convertStreamToString(inStream);
+            } else {
+                System.out.println(responseCode);
+                data = "Status:" + responseCode;
+                throw new RuntimeException("error: " + data);
+            }
+        } catch (MalformedURLException e) {
+            System.out.println("URL not valid.");
+            throw new RuntimeException("error: " + e);
+        } catch (Exception e) {
+            System.out.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("error: " + e);
         }
 
         return data;
@@ -354,7 +549,7 @@ public class MarketoService {
         try {
             return new Scanner(inputStream).useDelimiter("\\A").next();
         } catch (NoSuchElementException e) {
-            return "";
+            throw new RuntimeException("error: " + e);
         }
     }
 
