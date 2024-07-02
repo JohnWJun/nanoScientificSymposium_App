@@ -28,7 +28,6 @@ public class SecurityConfiguration {
 
 
     private final JwtTokenizer jwtTokenizer;
-//    private final MemberService memberService;
     private final CustomAuthorityUtils authorityUtils;
 
 

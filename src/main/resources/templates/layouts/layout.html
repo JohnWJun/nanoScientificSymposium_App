@@ -181,12 +181,12 @@
 <body>
 <div class="body-container">
 
-    <aside th:replace="/layouts/aside :: aside"></aside>
+    <aside th:replace="layouts/aside :: aside"></aside>
 
     <div class="main-container">
         <div class="content-container">
             <th:block layout:fragment="content"></th:block>
-            <footer th:replace="/layouts/footer :: footer"></footer>
+            <footer th:replace="layouts/footer :: footer"></footer>
         </div>
     </div>
 </div>
