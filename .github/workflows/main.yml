@@ -29,12 +29,16 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew bootjar
 
+      - name: Set Docker tag using short SHA
+        id: vars
+        run: echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
       - name: Docker build and push
         run: |
           docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
           docker build -t marbleus-cicd .
-          docker tag marbleus-cicd ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ github.sha::7 }}
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ github.sha::7 }}
+          docker tag marbleus-cicd ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ env.SHA_SHORT }}
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ env.SHA_SHORT }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -60,8 +64,8 @@ jobs:
               '  sudo docker stop server',
               '  sudo docker rm server',
               'fi',
-              'sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ github.sha::7 }}',
-              'sudo docker tag ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ github.sha::7 }} spring-cicd',
+              'sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ env.SHA_SHORT }}',
+              'sudo docker tag ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ env.SHA_SHORT }} spring-cicd',
               'sudo docker run -d --name server -p 8080:8080 spring-cicd'
             ]" \
             --output text
