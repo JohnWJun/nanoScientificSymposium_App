@@ -7,39 +7,47 @@ on:
 jobs:
   build:
 
-    runs-on: ec2-linux2
+    runs-on: [self-hosted, ec2-linux2]
+    # Use your runner's labels here
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK 17
+      - name: Checkout the code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK 17 with Amazon Corretto
         uses: actions/setup-java@v2
         with:
           java-version: '17'
           distribution: 'corretto'
-      - name: Set YML
+
+      - name: Set application.yml from secret
         run: |
           echo "${{ secrets.OCCUPY_SECRET }}" | base64 --decode > ./back/src/main/resources/application.yml
-          cat ./src/main/resources/application.yml
+          cat ./back/src/main/resources/application.yml  # Adjust the path to match your repo structure
+
       - name: Grant execute permission for gradlew
-#        working-directory: ./
         run: chmod +x ./gradlew
+
       - name: Build with Gradle
-#        working-directory: ./
         run: ./gradlew bootjar
-      - name: Docker build
+
+      - name: Docker build and push
         run: |
           docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_PASSWORD }}
           docker build -t marbleus-cicd .
-          docker tag marbleus-cicd ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${GITHUB_SHA::7}
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${GITHUB_SHA::7}
+          docker tag marbleus-cicd ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ github.sha::7 }}
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ github.sha::7 }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-northeast-2
+
       - name: Start Session Manager session
         run: aws ssm start-session --target i-098b623efb8ead80e
+
       - name: Deploy to Server
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
@@ -50,12 +58,12 @@ jobs:
             --instance-ids i-02b2c9f494fbf4e67 \
             --document-name "AWS-RunShellScript" \
             --parameters "commands=[
-              'if sudo docker ps -a --format \\'{{.Names}}\\' | grep -q \'^server$\\'; then',
+              'if sudo docker ps -a --format \\'{{.Names}}\\' | grep -q \'^server$\'; then',
               '  sudo docker stop server',
               '  sudo docker rm server',
               'fi',
-              'sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${GITHUB_SHA::7}',
-              'sudo docker tag ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${GITHUB_SHA::7} spring-cicd',
+              'sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ github.sha::7 }}',
+              'sudo docker tag ${{ secrets.DOCKER_HUB_USERNAME }}/spring-cicd:${{ github.sha::7 }} spring-cicd',
               'sudo docker run -d --name server -p 8080:8080 spring-cicd'
             ]" \
             --output text
